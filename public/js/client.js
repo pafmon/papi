@@ -9,28 +9,43 @@ function getPoem(){
 		dataType: "json" 
 	});
 
-	request.done(function(data,status,jqXHR) {
-		rand = randomWithLimit(data.length-1);
-	
-			var request = $.ajax({
-				url: "/ww/poems/"+data[rand],
-				type: "GET",
-				dataType: "json" 
+	request.done(function(poemList,status,jqXHR) {
+		var rand, poemTitle, parsedTitle;
+
+		do {
+			rand = randomWithLimit(poemList.length-1);
+			poemTitle = poemList[rand];
+			parsedTitle = poemTitle.split("-");
+		}while(parsedTitle[0] == "book");
+
+		if(!poemTitle){
+			console.error("No poem title found!: "+jqXHR.status);
+			$("#author").text(":(");
+			$("#author").click(function () {	
+				$("#author").text(jqXHR.status);
 			});
+			return;
+		}
 			
-			request.done(function(data,status,jqXHR) {
-				$("#title").text(data.title);
-				$("#text").text(data.text);					
-				$("#author").text("Walt Whitman");
-	
+		var request = $.ajax({
+			url: "/ww/poems/"+poemTitle,
+			type: "GET",
+			dataType: "json" 
+		});
+		
+		request.done(function(data,status,jqXHR) {
+			$("#title").text(data.title);
+			$("#text").text(data.text);					
+			$("#author").text("Walt Whitman");
+
+		});
+							
+		request.fail(function(jqXHR,status) {
+			$("#author").text(":(");
+			$("#author").click(function () {	
+				$("#author").text(jqXHR.status);
 			});
-								
-			request.fail(function(jqXHR,status) {
-				$("#author").text(":(");
-				$("#author").click(function () {	
-					$("#author").text(jqXHR.status);
-				});
-			});
+		});
 		
 	});
 		

@@ -28,6 +28,25 @@ app.get("/ww/poems",(req,res)=>{
     });
 });
 
+var poemsIndexArray = [];
+fs.readFile('./ww/index', function(err, poemsIndex) {
+    if(err) 
+        console.error(`Error Opening WW Index: ${err}`)
+
+    poemsIndexArray = poemsIndex.toString().replace(/\r\n/g,'\n').split('\n');
+});
+
+var poemsDataArray = [];
+fs.readFile('./ww/poems', function(err, poemsData) {
+    if(err) 
+        console.error(`Error Opening WW PoemsData: ${err}`)
+    
+    poemsDataArray = poemsData.toString().replace(/\r\n/g,'\n').split('\n');
+    console.log(`Loaded ${poemsIndexArray.length} WW poems.`);
+});
+
+
+
 app.get("/ww/poems/:poemId",(req,res)=>{
     
     const poemId = req.params.poemId;
@@ -37,50 +56,36 @@ app.get("/ww/poems/:poemId",(req,res)=>{
         text : null
     };
 
-    fs.readFile('./ww/index', function(err, poemsIndex) {
-        if(err) 
-            console.error(`Error Opening Index: ${err}`)
-
-        const poemsIndexArray = poemsIndex.toString().replace(/\r\n/g,'\n').split('\n');
-
-        const poemInfo =  
-            poemsIndexArray
-            .filter((poemInfo)=>{
-                const poemInfoArray = poemInfo.split(" ");
-                return (poemInfoArray[3] == poemId);
-            }).map((poemInfo)=>{
-                const poemInfoArray = poemInfo.split(" ");
-                return poemInfoArray;
-            })[0];
+    const poemInfo =  
+        poemsIndexArray
+        .filter((poemInfo)=>{
+            const poemInfoArray = poemInfo.split(" ");
+            return (poemInfoArray[3] == poemId);
+        }).map((poemInfo)=>{
+            const poemInfoArray = poemInfo.split(" ");
+            return poemInfoArray;
+        })[0];
         
-        if(!poemInfo){
-            res.sendStatus(404);
-            return;
-        }else{
-            fs.readFile('./ww/poems', function(err, poemsData) {
-                if(err) 
-                    console.error(`Error Opening PoemsData: ${err}`)
-                
-                const poemsDataArray = poemsData.toString().replace(/\r\n/g,'\n').split('\n');
-        
+    if(!poemInfo){
+        res.sendStatus(404);
+        return;
+    }else{
+    
+        const titleLineNo = parseInt(poemInfo[0]);
+        const poemBeginLineNo = parseInt(poemInfo[1]);
+        const poemEndLineNo = parseInt(poemInfo[2]);
 
-                const titleLineNo = parseInt(poemInfo[0]);
-                const poemBeginLineNo = parseInt(poemInfo[1]);
-                const poemEndLineNo = parseInt(poemInfo[2]);
+        response.index = poemInfo[3];
+        response.title = poemsDataArray[titleLineNo-1];
+        response.text = "";
 
-                response.index = poemInfo[3];
-                response.title = poemsDataArray[titleLineNo-1];
-                response.text = "";
-
-                for(var i= (poemBeginLineNo-1); i < poemEndLineNo; i++){
-                    response.text += poemsDataArray[i] + "\n";
-                }
-
-                res.json(response);
-            });
+        for(var i= (poemBeginLineNo-1); i < poemEndLineNo; i++){
+            response.text += poemsDataArray[i] + "\n";
         }
 
-    });
+        res.json(response);
+    }
+
 });
 
 
